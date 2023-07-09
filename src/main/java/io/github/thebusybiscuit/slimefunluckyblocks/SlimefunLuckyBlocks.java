@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
+import net.guizhanss.guizhanlibplugin.updater.GuizhanUpdater;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -33,7 +34,6 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.config.Config;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.skins.PlayerHead;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.skins.PlayerSkin;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.updater.GitHubBuildsUpdater;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import io.github.thebusybiscuit.slimefunluckyblocks.surprises.CustomItemSurprise;
 import io.github.thebusybiscuit.slimefunluckyblocks.surprises.LuckLevel;
@@ -103,19 +103,27 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
     public void onEnable() {
         cfg = new Config(this);
 
+        if (!getServer().getPluginManager().isPluginEnabled("GuizhanLibPlugin")) {
+            getLogger().log(Level.SEVERE, "本插件需要 鬼斩前置库插件(GuizhanLibPlugin) 才能运行!");
+            getLogger().log(Level.SEVERE, "从此处下载: https://50l.cc/gzlib");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         // Setting up bStats
         new Metrics(this, 4858);
 
-        if (cfg.getBoolean("options.auto-update") && getDescription().getVersion().startsWith("DEV - ")) {
-            new GitHubBuildsUpdater(this, getFile(), "TheBusyBiscuit/luckyblocks-sf/master").start();
+        if (cfg.getBoolean("options.auto-update") && getDescription().getVersion().startsWith("Build")) {
+            GuizhanUpdater.start(this, getFile(), "SlimefunGuguProject", "luckyblocks-sf", "master");
         }
 
         ItemGroup itemGroup = new ItemGroup(new NamespacedKey(this, "lucky_blocks"), new CustomItemStack(PlayerHead.getItemStack(PlayerSkin.fromHashCode(TEXTURE)), "&rLucky Blocks"));
 
-        SlimefunItemStack luckyBlock = new SlimefunItemStack("LUCKY_BLOCK", TEXTURE, "&fLucky Block", "&7Luck: &f0");
-        SlimefunItemStack veryLuckyBlock = new SlimefunItemStack("LUCKY_BLOCK_LUCKY", TEXTURE, "&fVery lucky Block", "&7Luck: &a+80");
-        SlimefunItemStack veryUnluckyBlock = new SlimefunItemStack("LUCKY_BLOCK_UNLUCKY", TEXTURE, "&fVery unlucky Block", "&7Luck: &c-80");
-        SlimefunItemStack pandorasBox = new SlimefunItemStack("PANDORAS_BOX", "86c7dde512871bd607b77e6635ad39f44f2d5b4729e60273f1b14fba9a86a", "&5Pandora\"s Box", "&7Luck: &c&oERROR");
+        SlimefunItemStack luckyBlock = new SlimefunItemStack("LUCKY_BLOCK", TEXTURE, "&f幸运方块", "&7幸运值：&f0");
+        SlimefunItemStack veryLuckyBlock = new SlimefunItemStack("LUCKY_BLOCK_LUCKY", TEXTURE, "&f非常幸运方块", "&7幸运值：&a+80");
+        SlimefunItemStack veryUnluckyBlock = new SlimefunItemStack("LUCKY_BLOCK_UNLUCKY", TEXTURE, "&f非常不幸方块", "&7幸运值：&c-80");
+        SlimefunItemStack pandorasBox = new SlimefunItemStack("PANDORAS_BOX",
+            "86c7dde512871bd607b77e6635ad39f44f2d5b4729e60273f1b14fba9a86a", "&5潘多拉魔盒", "&7幸运值：&c&o错误");
 
         // @formatter:off
         new LuckyBlock(itemGroup, luckyBlock, RecipeType.ENHANCED_CRAFTING_TABLE,
@@ -136,7 +144,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
         registerDefaultSurprises();
         registerCustomSurprises();
 
-        getLogger().log(Level.INFO, "Loaded {0} different Surprises!", surprises.size());
+        getLogger().log(Level.INFO, "已加载 {0} 个惊喜", surprises.size());
     }
 
     private void registerDefaultSurprises() {
@@ -212,8 +220,8 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
                     try {
                         luckLevel = LuckLevel.valueOf(cfg.getString("custom." + name + ".lucklevel").toUpperCase());
                     } catch (IllegalArgumentException ex) {
-                        getLogger().log(Level.WARNING, "Couldn\"t load lucklevel of CustomItem Surprise \"{0}\", now using NEUTRAL (default)", name);
-                        getLogger().log(Level.WARNING, "Valid lucklevel types: LUCKY, NEUTRAL, UNLUCKY, PANDORA");
+                        getLogger().log(Level.WARNING, "无法加载自定义惊喜 \"{0}\" 的幸运等级，正在使用默认的 NEUTRAL", name);
+                        getLogger().log(Level.WARNING, "有效的幸运等级: LUCKY, NEUTRAL, UNLUCKY, PANDORA");
                     }
                 }
 
@@ -237,7 +245,8 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
                                     item.setAmount(cfg.getInt(itemPath + ".amount"));
                                 }
                             } else {
-                                getLogger().log(Level.WARNING, "Could not load SlimefunItem \"{0}\" to custom surprise \"{1}\"", new Object[] { id, name });
+                                getLogger().log(Level.WARNING, "无法加载自定义惊喜 \"{1}\" 的粘液物品 \"{0}\"", new Object[] { id,
+                                    name });
                             }
                         } else if (cfg.getString(itemPath + ".type") != null && Material.getMaterial(cfg.getString(itemPath + ".type")) != null) {
                             item = new ItemStack(Material.getMaterial(cfg.getString(itemPath + ".type")));
@@ -269,7 +278,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
                                     if (enchantment != null) {
                                         if (split.length == 2) {
                                             if (!CommonPatterns.NUMERIC.matcher(split[1]).matches()) {
-                                                getLogger().log(Level.WARNING, "Could not set \"{0}\" enchant with level \"{1}\" for custom surprise \"{2}\"", new Object[] { enchName, split[1], name });
+                                                getLogger().log(Level.WARNING, "无法设置自定义惊喜 \"{2}\" 的附魔 \"{0}\" 等级 \"{1}\"", new Object[] { enchName, split[1], name });
                                                 continue;
                                             }
 
@@ -278,7 +287,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
 
                                         itemMeta.addEnchant(enchantment, level, true);
                                     } else {
-                                        getLogger().log(Level.WARNING, "Could not set \"{0}\" enchant for custom surprise \"{1}\"", new Object[] { enchName, name });
+                                        getLogger().log(Level.WARNING, "无法设置自定义惊喜 \"{1}\" 的附魔 \"{0}\"", new Object[] { enchName, name });
                                     }
                                 }
                             }
@@ -301,7 +310,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
     public static ItemStack createPotion(Color color, PotionEffect effect, boolean lucky) {
         ItemStack potion = new ItemStack(lucky ? Material.POTION : Material.SPLASH_POTION);
         PotionMeta pm = (PotionMeta) potion.getItemMeta();
-        pm.setDisplayName(ChatColors.color((lucky ? "&6Lucky" : "&cUnlucky") + " potion"));
+        pm.setDisplayName(ChatColors.color((lucky ? "&6幸运" : "&c不幸") + "药水"));
         pm.setColor(color);
         pm.addCustomEffect(effect, false);
         potion.setItemMeta(pm);
@@ -343,7 +352,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
         BlockStorage.store(b, "LUCKY_BLOCK");
 
         if (getCfg().getBoolean("debug")) {
-            getLogger().log(Level.INFO, "spawned lucky block at {0} {1} {2} - {3}", new Object[] { b.getX(), b.getY(), b.getZ(), b.getWorld().getName() });
+            getLogger().log(Level.INFO, "已在 {3} - {0} {1} {2} 生成幸运方块", new Object[] { b.getX(), b.getY(), b.getZ(), b.getWorld().getName() });
         }
     }
 
@@ -358,7 +367,7 @@ public class SlimefunLuckyBlocks extends JavaPlugin implements SlimefunAddon {
 
     @Override
     public String getBugTrackerURL() {
-        return "https://github.com/TheBusyBiscuit/luckyblocks-sf/issues";
+        return "https://github.com/SlimefunGuguProject/luckyblocks-sf/issues";
     }
 
 }
