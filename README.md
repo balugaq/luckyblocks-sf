@@ -18,7 +18,7 @@ LuckyBlocks是一个Slimefun4附属，它的灵感来自每个人口中的著名
 
 ## Discord
 你可以找到粘液科技社区在discord
-单击下面以加入服务器以获取有关此插件的建议/问题或其他讨论。
+单击下面加入discord服务器来获取有关此插件的建议/问题或其他讨论。
 <p align="center">
   <a href="https://discord.gg/fsD4Bkh">
     <img src="https://img.shields.io/discord/565557184348422174?color=7289DA&label=Discord&style=for-the-badge" alt="Discord Invite"/>
