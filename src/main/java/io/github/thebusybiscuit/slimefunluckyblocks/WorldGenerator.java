@@ -35,7 +35,7 @@ public class WorldGenerator implements Listener {
         if (random.nextInt(100) < chance) {
             int x = e.getChunk().getX() * 16 + random.nextInt(16);
             int z = e.getChunk().getZ() * 16 + random.nextInt(16);
-            int y = e.getWorld().getHighestBlockYAt(x, z);
+            int y = e.getWorld().getHighestBlockYAt(x, z) + 1;
 
             Block current = e.getWorld().getBlockAt(x, y, z);
             if (!current.getType().isSolid() && current.getRelative(BlockFace.DOWN).getType().isSolid()) {
@@ -43,5 +43,4 @@ public class WorldGenerator implements Listener {
             }
         }
     }
-
 }
